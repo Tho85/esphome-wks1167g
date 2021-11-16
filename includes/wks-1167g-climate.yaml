@@ -1,0 +1,80 @@
+tuya:
+
+climate:
+  platform: tuya
+  name: "${friendly_name}"
+  target_temperature_datapoint: 102
+  current_temperature_datapoint: 105
+  switch_datapoint: 101
+  active_state_datapoint: 106
+  active_state_heating_value: 3
+  active_state_cooling_value: 4
+  visual:
+    min_temperature: 60
+    max_temperature: 95
+    temperature_step: 5
+
+sensor:
+  - platform: tuya
+    name: "${friendly_name} time remaining"
+    sensor_datapoint: 107
+    unit_of_measurement: min
+    icon: mdi:timer
+  - platform: tuya
+    id: water_cooker_state
+    sensor_datapoint: 106
+    on_value:
+      then:
+        - component.update: water_cooker_state_template
+        - component.update: water_cooker_error_template
+  - platform: tuya
+    id: water_cooker_error
+    sensor_datapoint: 104
+    on_value:
+      then:
+        - component.update: water_cooker_error_template
+
+binary_sensor:
+  - platform: tuya
+    id: water_cooker_error_binary_sensor
+    sensor_datapoint: 104
+    on_state:
+      then:
+        - binary_sensor.template.publish:
+            id: water_cooker_error_binary_sensor_template
+            state: !lambda 'return (id(water_cooker_error_binary_sensor).state);'
+
+  - platform: template
+    name: "${friendly_name} error"
+    id: water_cooker_error_binary_sensor_template
+    device_class: problem
+    lambda: |-
+      return (id(water_cooker_error_binary_sensor).state > 0x01);
+
+
+text_sensor:
+  - platform: template
+    name: "${friendly_name} status"
+    id: water_cooker_state_template
+    lambda: |-
+      switch ((int)id(water_cooker_state).state) {
+        case 0x01: return {"kettle removed"};
+        case 0x02: return {"standby"};
+        case 0x03: return {"heating"};
+        case 0x04: return {"cooling down"};
+        case 0x05: return {"holding temperature"};
+      }
+
+      return {"unknown"};
+
+  - platform: template
+    name: "${friendly_name} error description"
+    id: water_cooker_error_template
+    lambda: |-
+      switch ((int)id(water_cooker_error).state) {
+        case 0x00: return {"no error"};
+        case 0x01: return {"kettle empty"};
+        case 0x04: return {"kettle overheated"};
+      }
+
+      return {"unknown"};

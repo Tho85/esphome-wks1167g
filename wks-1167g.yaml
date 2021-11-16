@@ -1,0 +1,31 @@
+substitutions:
+  friendly_name: "Kettle"
+  device_name: wks-1167g
+
+esphome:
+  name: $device_name
+  platform: ESP8266
+  board: esp01_1m
+# esp8266_restore_from_flash: true
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/Tho85/esphome.git
+      ref: Tho85/tuya-WKS1167-hack
+    components:
+      - tuya
+
+packages:
+  common: !include includes/common.yaml
+  wifi_sensors: !include includes/wifi-sensors.yaml
+  wks_1167g_climate: !include includes/wks-1167g-climate.yaml
+
+# Disable logging on UART
+logger:
+  baud_rate: 0
+
+uart:
+  rx_pin: GPIO03
+  tx_pin: GPIO01
+  baud_rate: 9600
